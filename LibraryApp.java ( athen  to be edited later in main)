@@ -1,0 +1,96 @@
+package com.library.main;
+
+import java.util.*;
+import com.library.models.*;
+import com.library.services.FileManager;
+import com.library.services.AutoSaveThread;
+
+public class LibraryApp {
+
+    private static List<Book> books = new ArrayList<>();                     // variables declaration //
+    private static List<Member> members = new ArrayList<>();
+    private static Scanner sc = new Scanner(System.in);
+    private static FileManager fileManager = new FileManager();
+
+    public static void main(String[] args) {
+
+        // === Step 1: Load previous data if available === //
+        Object loadedBooks = fileManager.loadFromFile("books.dat");
+        Object loadedMembers = fileManager.loadFromFile("members.dat");
+        if (loadedBooks != null) books = (List<Book>) loadedBooks;
+        if (loadedMembers != null) members = (List<Member>) loadedMembers;
+
+        // === Step 2: Start auto-save background thread ===
+        AutoSaveThread autoSave = new AutoSaveThread(fileManager, books, members);
+        autoSave.setDaemon(true); // Daemon → ends when app exits
+        autoSave.start();
+
+        // === Step 3: Display menu ===
+        int choice;
+        do {
+            System.out.println("\n Library Management System ");     // options //
+            System.out.println("1. Add Book");
+            System.out.println("2. View Books");
+            System.out.println("3. Add Member");
+            System.out.println("4. View Members");
+            System.out.println("5. Exit");
+            System.out.print("Enter choice: ");
+            choice = sc.nextInt();
+            sc.nextLine(); // clear buffer
+
+            switch (choice) {
+                case 1 -> addBook();
+                case 2 -> viewBooks();
+                case 3 -> addMember();
+                case 4 -> viewMembers();
+                case 5 -> {
+                    System.out.println("Exiting... Saving data one last time.");
+                    fileManager.saveAllData(books, members);
+                    System.out.println("Goodbye!");
+                }
+                default -> System.out.println("Invalid choice!");
+            }
+        } while (choice != 5);
+    }
+
+    // === Menu Option Methods ===
+    private static void addBook() {
+        System.out.print("Enter book title: ");
+        String title = sc.nextLine();
+        System.out.print("Enter author: ");
+        String author = sc.nextLine();
+        Book book = new Book(title, author);
+        books.add(book);
+        System.out.println("Book added successfully!");
+    }
+
+    private static void viewBooks() {
+        if (books.isEmpty()) {
+            System.out.println("No books found.");
+        } else {
+            System.out.println("--- Books in Library ---");
+            for (Book b : books) {
+                System.out.println(b);
+            }
+        }
+    }
+
+    private static void addMember() {
+        System.out.print("Enter member name: ");
+        String name = sc.nextLine();
+        Member m = new Member(name);
+        members.add(m);
+        System.out.println("Member added successfully!");
+    }
+
+    private static void viewMembers() {
+        if (members.isEmpty()) {
+            System.out.println("No members found.");
+        } else {
+            System.out.println("--- Library Members ---");
+            for (Member m : members) {
+                System.out.println(m);
+            }
+        }
+    }
+}
